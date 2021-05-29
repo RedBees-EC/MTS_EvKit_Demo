@@ -7,7 +7,7 @@
 
     Основным предназначением прошивки отладочного комплекта МТС NB-IoT является иллюстрация принципов построения устройств и систем
     телеметрии, передающих данные через сеть LTE Cat. NB1 (NB-IoT), а также демонстрация методик работы с поставляемым аппаратным обеспечением.
-	
+
     Прошивка реализует @link p3 сервисное меню@endlink, обеспечивающее доступ к функциям настройки и диагностики, а также предоставляющее прямой
     доступ к радиомодулю. Кроме этого доступен режим периодической передачи телеметрии.
 
@@ -38,7 +38,7 @@
     @warning Рекомендуется установить размер стека не менее 1 кБ.
 	@warning В силу того, что на плате изначально расположен определенный набор периферийных устройств, не все выводы Arduino-совместимого разъема доступны для использования.
 	Детали приведены в @link ardu_pins описании Arduino-совместимых выводов платы @endlink.
-	
+
     @section p2 Формат телеметрии
 
     Телеметрия передается на сервер в формате, совместимом с JSON. Строка телеметрии имеет вид
@@ -526,6 +526,33 @@ uint8_t SARA_init(uint8_t use_NIDD,uint8_t *NIDD_APN)
 }
 #endif
 
+uint8_t SARA_PowerOff(void)
+{
+    uint32_t timeout_start;
+    uint32_t time;
+
+    AT_SendCommand("AT+CPWROFF\r\n");
+
+    timeout_start = get_uptime_ms();
+    time = timeout_start;
+
+    while ((!(GPIOA->IDR & PIN_MASK(NB_VINT_PA))) && ((time - timeout_start)<40000))
+    {
+        time = get_uptime_ms();
+        delay_ms(1000);
+    }
+
+    if (GPIOA->IDR & PIN_MASK(NB_VINT_PA))
+    {
+        /* Module has been switched off successfully. */
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 /**
     @brief Преобразует данные в формате NMEA (с широтой и долготой в градусах и минутах) в градусы с дробной частью.
 
@@ -672,13 +699,13 @@ uint8_t transmit_telemetry(uint8_t *target_IP,uint8_t *target_url,uint16_t targe
     uint8_t socket_ID;
     uint16_t rx_data_length;
     uint8_t rx_socket_ID;
-    uint32_t wait_counter;
+    volatile uint32_t wait_counter;
     CoAP_header_info_t hdr_info;
     uint32_t resp_wait_start,resp_wait_end;
     volatile uint16_t k;
     uint8_t gnss_result;
     uint8_t gnss_data_conversion_result;
-    uint8_t gnss_string[80] = {"No GNSS data"};
+    static uint8_t gnss_string[80] = {"No GNSS data"};
     double latitude;
     double longitude;
     uint8_t GNSS_data_valid;
@@ -813,22 +840,35 @@ uint8_t transmit_telemetry(uint8_t *target_IP,uint8_t *target_url,uint16_t targe
 
             return 0;
         }
+        else
+        {
+            printf("Socket ID = %d\r\n",socket_ID);
+        }
 
         if (AT_SendUDPData(socket_ID,target_IP,target_port,CoAP_msg_buffer,CoAP_msg_len,3*CYCLES_PER_1SEC)!=AT_NO_ERROR)
         {
             printf("Failed to send data over IP.\r\n");
         }
+        else
+        {
+            printf("Data sent.\r\n");
+        }
 
         resp_wait_start = get_uptime_ms();
+        resp_wait_end = resp_wait_start;
         wait_counter=0;
         rx_socket_ID = INVALID_SOCKET_ID;
         rx_data_length=0;
-        while ((rx_socket_ID!=socket_ID) && (wait_counter<CYCLES_PER_1SEC))
+
+        printf("Waiting for an answer from the server...\r\n");
+
+        while ((rx_socket_ID != socket_ID) && ((resp_wait_end - resp_wait_start) < 5000UL))
         {
             AT_CheckUDPReceived(&rx_socket_ID,&rx_data_length);
-            wait_counter++;
+            resp_wait_end = get_uptime_ms();
         }
-        resp_wait_end = get_uptime_ms();
+
+        printf("RX socket ID = %d, data length = %d\r\n",rx_socket_ID,rx_data_length);
 
         if ((rx_socket_ID!=socket_ID) || (rx_data_length==0))
         {
@@ -866,7 +906,7 @@ uint8_t transmit_telemetry(uint8_t *target_IP,uint8_t *target_url,uint16_t targe
 
         if (!AT_CloseUDPSocket(socket_ID,CYCLES_PER_1SEC))
         {
-            printf("Unable to close UDP socket.\r\n");
+            printf("Unable to close UDP socket (socket_ID = %d).\r\n",socket_ID);
         }
     }
 
@@ -1066,7 +1106,7 @@ void main(void)
         AT_ReadICCID(ICCID_cache_string,CYCLES_PER_1SEC);
 
         #if DO_NOT_GO_STOP == 0
-        AWU_Init(eep_settings.telemetry_interval_ms);
+        AWU_Init(eep_settings.telemetry_interval_ms,0);
 
         if (eep_settings.telemetry_interval_ms>6000)
         {

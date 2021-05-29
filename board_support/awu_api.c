@@ -32,7 +32,7 @@ void __lock_RTC_registers(void)
     RTC->WPR = 0x00;
 }
 
-void AWU_Init(uint16_t wakeup_timeout_ms)
+void AWU_Init(uint16_t wakeup_timeout,uint8_t timeout_is_in_seconds)
 {
     uint32_t safety_counter;
 
@@ -52,16 +52,27 @@ void AWU_Init(uint16_t wakeup_timeout_ms)
         safety_counter++;
     }
 
-    if (wakeup_timeout_ms>16000)
+    if (timeout_is_in_seconds != 0)
     {
-        wakeup_timeout_ms=16000;
+        RTC->WUTR = wakeup_timeout;
+    }
+    else
+    {
+        RTC->WUTR = (((uint32_t)wakeup_timeout)*4096UL)/1000UL - 1;
     }
 
-    RTC->WUTR = (((uint32_t)wakeup_timeout_ms)*4096UL)/1000UL - 1;
-
-    //Set LSE/8 clock frequency for AWU (4096 Hz at standard 32768 Hz crystal), approx. 244.14 us resolution
     RTC->CR &= ~RTC_CR_WUCKSEL;
-    RTC->CR |= RTC_CR_WUCKSEL_0;
+
+    if (timeout_is_in_seconds != 0)
+    {
+        //Set ck_spre (1 Hz) clock
+        RTC->CR |= RTC_CR_WUCKSEL_2;
+    }
+    else
+    {
+        //Set LSE/8 clock frequency for AWU (4096 Hz at standard 32768 Hz crystal), approx. 244.14 us resolution
+        RTC->CR |= RTC_CR_WUCKSEL_0;
+    }
 
     //Enable AWU
     RTC->CR |= RTC_CR_WUTE | RTC_CR_WUTIE;
@@ -104,7 +115,7 @@ void AWU_GoStop(void)
     RCC->CFGR |= RCC_CFGR_SW_HSI;
 
     safety_counter=0;
-    while (((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI) && (safety_counter<AWU_MAX_WAIT))
+    while (((RCC->CFGR & RCC_CFGR_SW)==RCC_CFGR_SW_HSI) && (safety_counter<AWU_MAX_WAIT))
     {
         safety_counter++;
     }

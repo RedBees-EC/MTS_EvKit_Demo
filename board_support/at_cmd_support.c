@@ -387,6 +387,8 @@ uint8_t AT_CloseUDPSocket(uint8_t socket_id,uint32_t max_wait_time)
     return 1;
 }
 
+extern volatile uint32_t CYCLES_PER_1SEC;
+
 at_udp_error_t AT_SendUDPData(uint8_t socket_id,uint8_t *target_IP_string,uint16_t target_port,uint8_t *data,uint16_t data_length,uint32_t max_wait_time)
 {
     uint8_t cmd_header[30];
@@ -442,6 +444,7 @@ uint8_t AT_CheckUDPReceived(uint8_t *socket_id,uint16_t *packet_length)
 {
     uint8_t *data_start;
     uint8_t k;
+
 #if USE_ADVANCED_URC_SEARCH == 1
     if (URC_search_list[UDP_URC_LIST_INDEX].URC_detected == 0)
 #else
