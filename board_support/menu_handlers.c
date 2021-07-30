@@ -1024,7 +1024,7 @@ const menu_item_descriptor_t menu_items[] = {
     {test_sensors,"read on-board sensors and try to acquire GNSS data"},
     {perform_system_reset,"reboot MCU"},
     {perform_RF_module_reset,"reboot RF module"},
-    {test_function,"launch advanced menu (DO NOT CALL FROM ADVANCED MENU ITSELF!!!)"},
+    {test_function,"launch advanced menu"},
     {perform_initial_setup,"factory setup & test (do not use this unless you really know what you want)"},
     {NULL,"\0"}
 };

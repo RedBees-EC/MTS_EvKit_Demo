@@ -1,20 +1,54 @@
 #include "menu_engine.h"
 
-#define CLEAR_SCREEN            "2J"
-#define CURSOR_HOME             "4;0H"
-#define RESTORE_TERM            "0m"
-#define HIDE_CURSOR             "25l"
+/*
+    ANSI escape sequences
+    https://docs.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
+*/
+#define CLEAR_SCREEN                "2J"
+#define CURSOR_HOME                 "4;0H"
+#define RESTORE_TERM                "0m"
+#define HIDE_CURSOR                 "25l"
 
-#define TEXT_BG_WHITE           "47m"
-#define TEXT_COLOR_YELLOW       "33m"
-#define TEXT_COLOR_GREEN        "32m"
-#define TEXT_COLOR_BLACK        "30m"
-#define TEXT_COLOR_WHITE        "37m"
+#define TEXT_BG_WHITE               "47m"
+#define TEXT_COLOR_YELLOW           "33m"
+#define TEXT_COLOR_BRIGHT_YELLOW    "93m"
+#define TEXT_COLOR_GREEN            "32m"
+#define TEXT_COLOR_BLACK            "30m"
+#define TEXT_COLOR_WHITE            "37m"
+#define TEXT_COLOR_BRIGHT_WHITE     "97m"
 
-#define TEXT_BG_BLUE            "44m"
-#define TEXT_BG_YELLOW          "43m"
-#define TEXT_BG_GREEN           "42m"
-#define TEXT_COLOR_BOLD_RED     "91m"
+#define TEXT_BG_BLUE                "44m"
+#define TEXT_BG_YELLOW              "43m"
+#define TEXT_BG_GREEN               "42m"
+#define TEXT_COLOR_BOLD_RED         "91m"
+
+#define MENU_DRAW_OFFSET            4
+
+/*
+    This array contains numbers of items which will not be accessible through the "new" menu.
+    The last item of this array must be 0xFFFF.
+*/
+const uint16_t inactive_menu_items[] = {18,19,0xFFFF};
+
+/*
+    Check whether menu item is enabled.
+*/
+uint8_t is_active(uint16_t n)
+{
+    uint16_t k;
+
+    k=0;
+    while (inactive_menu_items[k] != 0xFFFF)
+    {
+        if (inactive_menu_items[k] == n)
+        {
+            return 0;
+        }
+        k++;
+    }
+
+    return 1;
+}
 
 void esc(const uint8_t *sequence)
 {
@@ -29,7 +63,17 @@ void set_cursor_XY(uint8_t X,uint8_t Y)
     printf("%s",esc_cmd);
 }
 
-uint16_t draw_menu_items(const menu_item_descriptor_t* menu_data,uint16_t highlighted_item_no,uint8_t redraw_only)
+/*
+    Draws the menu based on the description array.
+
+    menu_data - array which describes menu items; the format and the array itself is shared with the old menu
+    hightlighted_item_no - number of the item which will be highlighted
+    previous_highlighted_item_no - used when redraw_only == 1; this is the second item to be drawn in this mode;
+    redraw_only - draw only highlighted_item_no and previous_highlighted_item_no
+
+    Returns the number of items drawn.
+*/
+uint16_t draw_menu_items(const menu_item_descriptor_t* menu_data,uint16_t highlighted_item_no,uint16_t previous_highlighted_item_no,uint8_t redraw_only)
 {
     uint16_t k;
 
@@ -37,25 +81,73 @@ uint16_t draw_menu_items(const menu_item_descriptor_t* menu_data,uint16_t highli
     esc(CURSOR_HOME);
     esc(TEXT_COLOR_YELLOW);
 
+    if (redraw_only)
+    {
+        k=2;
+
+        set_cursor_XY(0,MENU_DRAW_OFFSET+previous_highlighted_item_no);
+        esc(TEXT_BG_BLUE);
+        if (is_active(previous_highlighted_item_no))
+        {
+            esc(TEXT_COLOR_BRIGHT_YELLOW);
+        }
+        else
+        {
+            esc(TEXT_COLOR_YELLOW);
+        }
+        printf("                                                                                          \r");
+        printf(" %s",menu_data[previous_highlighted_item_no].item_string_description);
+        set_cursor_XY(0,MENU_DRAW_OFFSET+highlighted_item_no);
+        esc(TEXT_BG_YELLOW);
+        if (is_active(highlighted_item_no))
+        {
+            esc(TEXT_COLOR_BLACK);
+        }
+        else
+        {
+            esc(TEXT_COLOR_WHITE);
+        }
+        printf("                                                                                          \r");
+        printf(" %s\r",menu_data[highlighted_item_no].item_string_description);
+
+        esc(RESTORE_TERM);
+
+        return;
+    }
+
     k=0;
     while ((menu_data[k].item_string_description[0] != '\0') || (menu_data[k].menu_item_handler != NULL))
     {
         if (k == highlighted_item_no)
         {
             esc(TEXT_BG_YELLOW);
-            esc(TEXT_COLOR_BLACK);
+
+            if (is_active(k))
+            {
+                esc(TEXT_COLOR_BLACK);
+            }
+            else
+            {
+                esc(TEXT_COLOR_WHITE);
+            }
         }
         else
         {
             esc(TEXT_BG_BLUE);
             esc(TEXT_COLOR_YELLOW);
+
+            if (is_active(k))
+            {
+                esc(TEXT_COLOR_BRIGHT_YELLOW);
+            }
+            else
+            {
+                esc(TEXT_COLOR_YELLOW);
+            }
         }
 
-        if ((redraw_only == 0) || (k == highlighted_item_no) || (k == (highlighted_item_no-1)) || (k == (highlighted_item_no+1)))
-        {
-            printf("                                                                                          \r");
-            printf(" %s",menu_data[k].item_string_description);
-        }
+        printf("                                                                                          \r");
+        printf(" %s",menu_data[k].item_string_description);
 
         printf("\r\n");
 
@@ -87,6 +179,7 @@ void service_menu_modern(const menu_item_descriptor_t *menu_data)
     uint8_t esc_seq_counter=0;
     uint8_t exit_counter=0;
     uint16_t selected_item_no = 0;
+    uint16_t previous_selected_item_no=0;
     uint16_t menu_items_count;
     device_setup_data_t settings;
 
@@ -95,8 +188,9 @@ void service_menu_modern(const menu_item_descriptor_t *menu_data)
     printf("\x1B]2;MTS Development Kit Service Menu\x07"); //Setting the window title
     printf("\x1B[?3h"); //Set number of columns to 132
 
+    set_cursor_XY(0,0);
     draw_menu_header();
-    menu_items_count = draw_menu_items(menu_data,0,0);
+    menu_items_count = draw_menu_items(menu_data,0,0,0);
 
     while (1)
     {
@@ -107,20 +201,31 @@ void service_menu_modern(const menu_item_descriptor_t *menu_data)
             printf("\x1B]2;MTS Development Kit Service Menu\x07"); //Setting the window title
             printf("\x1B[?3h"); //Set number of columns to 132
 
+            set_cursor_XY(0,0);
             draw_menu_header();
-            menu_items_count = draw_menu_items(menu_data,0,0);
+            menu_items_count = draw_menu_items(menu_data,0,0,0);
         }
 
         if (ch == 0x0D)
         {
             esc(CLEAR_SCREEN);
-            draw_menu_header();
-            draw_menu_items(menu_data,selected_item_no,0);
-            printf("\r\n");
-            esc(TEXT_COLOR_YELLOW);
-            menu_data[selected_item_no].menu_item_handler(&settings);
             esc(RESTORE_TERM);
-            printf("\r\nFunction OK.\r\n");
+            set_cursor_XY(0,0);
+            if (is_active(selected_item_no))
+            {
+                menu_data[selected_item_no].menu_item_handler(&settings);
+                printf("\r\n\r\nFunction OK; press enter to return to menu.\r\n");
+            }
+            else
+            {
+                printf("This function is not available from this menu; please try calling it from the basic menu.\r\n");
+                printf("Press Enter to return.\r\n");
+            }
+            ch = UART_WaitRxByte(USART1);
+            esc(CLEAR_SCREEN);
+            esc(RESTORE_TERM);
+            draw_menu_header();
+            draw_menu_items(menu_data,selected_item_no,previous_selected_item_no,0);
         }
 
         if (ch == 0x1B)
@@ -156,13 +261,14 @@ void service_menu_modern(const menu_item_descriptor_t *menu_data)
             {
                 esc_seq_counter = 0;
 
-                if (selected_item_no < menu_items_count)
+                if (selected_item_no < (menu_items_count - 1))
                 {
                     selected_item_no++;
                 }
             }
 
-            draw_menu_items(menu_data,selected_item_no,1);
+            draw_menu_items(menu_data,selected_item_no,previous_selected_item_no,1);
+            previous_selected_item_no = selected_item_no;
         }
     }
 
@@ -179,6 +285,7 @@ void service_menu(void)
     device_setup_data_t settings;
     uint16_t k;
     uint8_t user_input[80];
+    uint16_t n;
 
     printf("\r\n*** Welcome to MTS NB-IoT Development Kit service menu ***\r\nFirmware version: %s\r\n\r\n",FIRMWARE_VERSION);
 
