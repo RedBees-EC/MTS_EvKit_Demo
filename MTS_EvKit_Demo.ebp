@@ -123,6 +123,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="board_support\lis3dh_driver.h" />
+		<Unit filename="board_support\menu_engine.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="board_support\menu_engine.h" />
 		<Unit filename="board_support\menu_handlers.c">
 			<Option compilerVar="CC" />
 		</Unit>

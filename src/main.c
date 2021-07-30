@@ -172,7 +172,7 @@
 
 #include "stm32l1xx.h"
 #include "board_support_api.h"
-#include "menu_handlers.h"
+#include "menu_engine.h"
 
 /**
     Отладочная опция: отключить переход контроллера в режим STOP между сеансами передачи телеметрии
@@ -913,109 +913,7 @@ uint8_t transmit_telemetry(uint8_t *target_IP,uint8_t *target_url,uint16_t targe
     return 1;
 }
 
-/**
-    @brief Функция, реализующая сервисное меню. См. описание сервисного меню на главной странице.
-*/
-void service_menu(void)
-{
-    uint8_t user_choice;
-    device_setup_data_t settings;
-    uint16_t k;
-    uint8_t user_input[80];
 
-    printf("\r\n*** Welcome to MTS NB-IoT Development Kit service menu ***\r\nFirmware version: %s\r\n\r\n",FIRMWARE_VERSION);
-
-    printf("Current settings found in EEPROM:\r\n\r\n");
-
-    recall_device_settings(&settings);
-
-    if (settings.target_server_IP[0]=='\0')
-    {
-        printf("Warning: target server IP not set.\r\n");
-    }
-    else
-    {
-        printf("Target IP:\t\t%s\r\n",settings.target_server_IP);
-    }
-
-    printf("Target port:\t\t%d\r\n",settings.target_server_port);
-
-    if ((!is_alphanumeric(settings.target_URL[1])) || (settings.target_URL[0]=='\0'))
-    {
-        printf("Warning: target URL not set.\r\n");
-    }
-    else
-    {
-        printf("Target URL:\t\t%s\r\n",settings.target_URL);
-    }
-
-    if ((!is_alphanumeric(settings.NIDD_APN_name[1])) || (settings.NIDD_APN_name[0]=='\0'))
-    {
-        printf("Warning: APN name not set.\r\n");
-    }
-    else
-    {
-        printf("NIDD APN:\t\t%s\r\n",settings.NIDD_APN_name);
-    }
-
-    printf("Use NIDD for telemetry:\t%d\r\n",settings.use_NIDD);
-
-    printf("Board mode on startup:\t");
-
-    if (settings.logger_mode_on_startup==LOGGER_MODE_VALUE)
-    {
-        printf("logger\r\n");
-    }
-    else
-    {
-        printf("service menu\r\n");
-    }
-
-    printf("Telemetry interval\r\n(in logger mode):\t%d ms\r\n",settings.telemetry_interval_ms);
-    printf("GNSS privacy mode:\t%d\r\n",settings.gnss_privacy_mode);
-
-    printf("\r\nType in a function number from a list below and press enter.\r\n\r\n");
-
-    k=0;
-    while ((menu_items[k].menu_item_handler!=NULL) && (menu_items[k].item_string_description[0]!='\0'))
-    {
-        if (k==0)
-        {
-            printf("Target server setup:\r\n");
-        }
-        if (k==4)
-        {
-            printf("System functions:\r\n");
-        }
-        printf("\t%d\t- %s\r\n",k+1,menu_items[k].item_string_description);
-        k++;
-    }
-
-    printf("> ");
-    scanf("%s",user_input);
-    apply_backspace(user_input,80);
-    user_choice = atoi(user_input);
-
-    user_choice--; //Array numbering is zero-based, but menu items are numbered starting from one not to confuse the user
-
-    printf("\r\n--------------------------------------------------------------------------------\r\n");
-
-    if (user_choice>=k)
-    {
-        printf("Unknown function - %d",user_input+1);
-    }
-    else
-    {
-        menu_items[user_choice].menu_item_handler(&settings);
-    }
-
-    printf("\r\n--------------------------------------------------------------------------------\r\n");
-
-    printf("Press Enter to return to service menu.\r\n");
-    getchar();
-    getchar();
-    printf("\r\n");
-}
 
 /**
     @brief Точка входа приложения.

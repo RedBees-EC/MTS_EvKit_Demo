@@ -351,11 +351,60 @@ void print_network_info(device_setup_data_t *settings)
     int32_t RSRQ;
     int32_t CellID;
     int32_t EARFCN;
+    uint16_t k;
+    uint16_t marker_pos;
 
     if (execute_AT_command_silent("AT+CSQ\r\n",resp_buffer)==0)
     {
+        printf("\x1B[0m");
+
         sscanf(resp_buffer,"%*s\r\r\n+CSQ: %d",&RSSI);
         printf("RSSI\t= %d dBm (valid range is -111 to -51 dBm)\r\n",(RSSI*2) - 113);
+
+        marker_pos = 0.42*((RSSI*2.0) - 113.0) + 50;
+
+        /*      __________________________________________________     */
+        printf("\r\n");
+        printf("  -111                     -51                    0\r\n");
+        //printf("   |                         |                    |\r\n");
+
+        for (k=0; k<50; k++)
+        {
+            if (k==0)
+            {
+                printf("\x1B[47m");
+            }
+
+            if (k==3)
+            {
+                printf("\x1B[41m");
+            }
+
+            if (k==8)
+            {
+                printf("\x1B[43m");
+            }
+
+            if (k==20)
+            {
+                printf("\x1B[42m");
+            }
+
+            if (k==28)
+            {
+                printf("\x1B[47m");
+            }
+
+            if (k == marker_pos)
+            {
+                printf("\x1B[30m*\x1B[37m");
+            }
+            else
+            {
+                printf(" ");
+            }
+        }
+        printf("\x1B[0m dBm\r\n\r\n");
     }
     else
     {
@@ -900,24 +949,82 @@ void test_CoAP_observe_function(device_setup_data_t *settings)
     AT_CloseUDPSocket(socket_ID,CYCLES_PER_1SEC);
 }
 
+void service_menu_modern(const menu_item_descriptor_t *menu_data);
+void test_function(device_setup_data_t *settings)
+{
+    service_menu_modern(menu_items);
+}
+
+void show_EEPROM_settings(device_setup_data_t *settings)
+{
+    printf("Current settings found in EEPROM:\r\n\r\n");
+
+    if (settings->target_server_IP[0]=='\0')
+    {
+        printf("Warning: target server IP not set.\r\n");
+    }
+    else
+    {
+        printf("Target IP:\t\t%s\r\n",settings->target_server_IP);
+    }
+
+    printf("Target port:\t\t%d\r\n",settings->target_server_port);
+
+    if ((!is_alphanumeric(settings->target_URL[1])) || (settings->target_URL[0]=='\0'))
+    {
+        printf("Warning: target URL not set.\r\n");
+    }
+    else
+    {
+        printf("Target URL:\t\t%s\r\n",settings->target_URL);
+    }
+
+    if ((!is_alphanumeric(settings->NIDD_APN_name[1])) || (settings->NIDD_APN_name[0]=='\0'))
+    {
+        printf("Warning: APN name not set.\r\n");
+    }
+    else
+    {
+        printf("NIDD APN:\t\t%s\r\n",settings->NIDD_APN_name);
+    }
+
+    printf("Use NIDD for telemetry:\t%d\r\n",settings->use_NIDD);
+
+    printf("Board mode on startup:\t");
+
+    if (settings->logger_mode_on_startup==LOGGER_MODE_VALUE)
+    {
+        printf("logger\r\n");
+    }
+    else
+    {
+        printf("service menu\r\n");
+    }
+
+    printf("Telemetry interval\r\n(in logger mode):\t%d ms\r\n",settings->telemetry_interval_ms);
+    printf("GNSS privacy mode:\t%d\r\n",settings->gnss_privacy_mode);
+}
+
 const menu_item_descriptor_t menu_items[] = {
     {set_target_URL,"set the URL of the resource JSON data will be transmitted to"},
     {set_server_IP,"set the IP address"},
     {set_server_port,"set the port"},
     {set_NIDD_APN,"set an APN for NIDD access or turn NIDD mode ON or OFF"},
+    {show_EEPROM_settings,"show EEPROM settings"},
     {test_transmit_telemetry,"force send telemetry packet"},
     {wait_NIDD_URC,"wait for incoming NIDD data during specified timeout (and then exit)"},
     {test_CoAP_observe_function,"test CoAP OBSERVE function"},
     {direct_AT_mode,"enter direct AT-command mode"},
-    {true_direct_mode,"enter true direct mode to access the RF module\r\n\t\tCAUTION: to exit this mode you will have to reboot the board physically"},
+    {true_direct_mode,"enter true direct mode to access the RF module"},
     {print_identification_data,"show board identification data (serial numbers, firmware versions, etc.)"},
     {print_network_info,"show network information"},
     {set_telemetry_interval,"set telemetry transmission interval"},
-    {set_GNSS_privacy,"set GNSS privacy mode\r\n\t\t(hide actual location data when transmitting on server)"},
+    {set_GNSS_privacy,"set GNSS privacy mode (hide actual location data when transmitting on server)"},
     {set_startup_mode,"set firmware startup mode (setup or logger)"},
     {test_sensors,"read on-board sensors and try to acquire GNSS data"},
     {perform_system_reset,"reboot MCU"},
     {perform_RF_module_reset,"reboot RF module"},
-    {perform_initial_setup,"factory setup & test\r\n\t\t(do not use this unless you really know what you want)"},
+    {test_function,"launch advanced menu (DO NOT CALL FROM ADVANCED MENU ITSELF!!!)"},
+    {perform_initial_setup,"factory setup & test (do not use this unless you really know what you want)"},
     {NULL,"\0"}
 };
