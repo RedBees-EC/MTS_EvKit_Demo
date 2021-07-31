@@ -17,7 +17,7 @@
 
 #define ESC_CHAR            27
 
-void service_menu_modern(const menu_item_descriptor_t *menu_data);
+void service_menu_v2(const menu_item_descriptor_t *menu_data);
 void service_menu(void);
 
 #endif /* MENU_ENGINE_H_INCLUDED */

@@ -28,7 +28,7 @@
     This array contains numbers of items which will not be accessible through the "new" menu.
     The last item of this array must be 0xFFFF.
 */
-const uint16_t inactive_menu_items[] = {18,19,0xFFFF};
+const uint16_t inactive_menu_items[] = {20,21,0xFFFF};
 
 /*
     Check whether menu item is enabled.
@@ -96,7 +96,7 @@ uint16_t draw_menu_items(const menu_item_descriptor_t* menu_data,uint16_t highli
             esc(TEXT_COLOR_YELLOW);
         }
         printf("                                                                                          \r");
-        printf(" %s",menu_data[previous_highlighted_item_no].item_string_description);
+        printf("[%02d] %s",previous_highlighted_item_no + 1,menu_data[previous_highlighted_item_no].item_string_description);
         set_cursor_XY(0,MENU_DRAW_OFFSET+highlighted_item_no);
         esc(TEXT_BG_YELLOW);
         if (is_active(highlighted_item_no))
@@ -108,11 +108,11 @@ uint16_t draw_menu_items(const menu_item_descriptor_t* menu_data,uint16_t highli
             esc(TEXT_COLOR_WHITE);
         }
         printf("                                                                                          \r");
-        printf(" %s\r",menu_data[highlighted_item_no].item_string_description);
+        printf("[%02d] %s\r",highlighted_item_no + 1,menu_data[highlighted_item_no].item_string_description);
 
         esc(RESTORE_TERM);
 
-        return;
+        return k;
     }
 
     k=0;
@@ -147,7 +147,7 @@ uint16_t draw_menu_items(const menu_item_descriptor_t* menu_data,uint16_t highli
         }
 
         printf("                                                                                          \r");
-        printf(" %s",menu_data[k].item_string_description);
+        printf("[%02d] %s",k+1,menu_data[k].item_string_description);
 
         printf("\r\n");
 
@@ -173,7 +173,7 @@ void draw_menu_header(void)
 /**
     @brief Функция, реализующая новое сервисное меню. См. описание сервисного меню на главной странице.
 */
-void service_menu_modern(const menu_item_descriptor_t *menu_data)
+void service_menu_v2(const menu_item_descriptor_t *menu_data)
 {
     uint8_t ch;
     uint8_t esc_seq_counter=0;
@@ -182,6 +182,8 @@ void service_menu_modern(const menu_item_descriptor_t *menu_data)
     uint16_t previous_selected_item_no=0;
     uint16_t menu_items_count;
     device_setup_data_t settings;
+    uint8_t shortcut_number_array[2];
+    uint8_t shortcut_number_counter;
 
     recall_device_settings(&settings);
 
@@ -191,11 +193,46 @@ void service_menu_modern(const menu_item_descriptor_t *menu_data)
     set_cursor_XY(0,0);
     draw_menu_header();
     menu_items_count = draw_menu_items(menu_data,0,0,0);
+    shortcut_number_counter = 0;
 
     while (1)
     {
         ch = UART_WaitRxByte(USART1);
 
+        /*
+            Shortcut mechanism: if two numeric symbols are entered, set selected item to this value
+        */
+        if ((ch >= '0') && (ch <= '9'))
+        {
+            shortcut_number_array[shortcut_number_counter] = ch;
+            shortcut_number_counter++;
+
+            if (shortcut_number_counter >= 2)
+            {
+                shortcut_number_counter = 0;
+                /*
+                    Subtracting 1 to account for shift made while drawing.
+                    Array indices are zero-based, but menu numbers are drawn one-based for better user experience.
+                */
+                selected_item_no = (shortcut_number_array[1] - '0') + (shortcut_number_array[0] - '0')*10 - 1;
+
+                if (selected_item_no >= menu_items_count)
+                {
+                    selected_item_no = menu_items_count;
+                }
+
+                draw_menu_items(menu_data,selected_item_no,previous_selected_item_no,1);
+                previous_selected_item_no = selected_item_no;
+            }
+        }
+        else
+        {
+            shortcut_number_counter = 0;
+        }
+
+        /*
+            r for "redraw"
+        */
         if (ch == 'r')
         {
             printf("\x1B]2;MTS Development Kit Service Menu\x07"); //Setting the window title
@@ -206,6 +243,9 @@ void service_menu_modern(const menu_item_descriptor_t *menu_data)
             menu_items_count = draw_menu_items(menu_data,0,0,0);
         }
 
+        /*
+            Enter
+        */
         if (ch == 0x0D)
         {
             esc(CLEAR_SCREEN);
@@ -228,12 +268,18 @@ void service_menu_modern(const menu_item_descriptor_t *menu_data)
             draw_menu_items(menu_data,selected_item_no,previous_selected_item_no,0);
         }
 
+        /*
+            Escape. Pressing Escape three times will make this menu finish.
+        */
         if (ch == 0x1B)
         {
             esc_seq_counter = 1;
             exit_counter++;
         }
 
+        /*
+            Up/Down escape sequence mechanism.
+        */
         if ((esc_seq_counter == 1) && (ch == '['))
         {
             esc_seq_counter++;
@@ -285,7 +331,6 @@ void service_menu(void)
     device_setup_data_t settings;
     uint16_t k;
     uint8_t user_input[80];
-    uint16_t n;
 
     printf("\r\n*** Welcome to MTS NB-IoT Development Kit service menu ***\r\nFirmware version: %s\r\n\r\n",FIRMWARE_VERSION);
 

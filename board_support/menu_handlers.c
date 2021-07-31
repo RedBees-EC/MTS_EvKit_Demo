@@ -665,6 +665,7 @@ void perform_initial_setup(device_setup_data_t *settings)
     settings->gnss_privacy_mode=1;
     settings->logger_mode_on_startup=0;
     settings->telemetry_interval_ms = 1000;
+    settings->bit_options = 0;
     settings->reserved[0] = SETTINGS_SIGNATURE_0;
     settings->reserved[1] = SETTINGS_SIGNATURE_1;
     settings->reserved[2] = SETTINGS_SIGNATURE_2;
@@ -949,10 +950,10 @@ void test_CoAP_observe_function(device_setup_data_t *settings)
     AT_CloseUDPSocket(socket_ID,CYCLES_PER_1SEC);
 }
 
-void service_menu_modern(const menu_item_descriptor_t *menu_data);
+void service_menu_v2(const menu_item_descriptor_t *menu_data);
 void test_function(device_setup_data_t *settings)
 {
-    service_menu_modern(menu_items);
+    service_menu_v2(menu_items);
 }
 
 void show_EEPROM_settings(device_setup_data_t *settings)
@@ -1005,6 +1006,47 @@ void show_EEPROM_settings(device_setup_data_t *settings)
     printf("GNSS privacy mode:\t%d\r\n",settings->gnss_privacy_mode);
 }
 
+void set_menu_version(device_setup_data_t *settings)
+{
+    uint32_t desired_version;
+
+    printf("Enter the menu version to be used on device startup\r\n");
+    printf("(1 - version 1, \"classic\", 2 - version 2):\r\n");
+
+    scanf("%d",&desired_version);
+
+    printf("\r\n");
+
+    switch (desired_version)
+    {
+        case 1:
+            settings->bit_options &= ~OPTION_START_WITH_MENU_V2;
+        break;
+        case 2:
+            settings->bit_options |= OPTION_START_WITH_MENU_V2;
+        break;
+        default:
+            printf("Warning: menu version %d is not supported. The startup mode will be left unchanged.\r\n");
+        break;
+    }
+
+    store_device_settings(settings);
+
+    printf("Setting saved.\r\n");
+}
+
+void show_menu_v2_help(device_setup_data_t *settings)
+{
+    printf("Menu version 2 usage and hotkeys\r\n\r\n");
+    printf("Press arrows Up/Down to move selection, Enter to run the selected function.\r\n\
+The items which are unavailable are drawn with a dim font.\r\n\r\n\
+Press 'r' to force menu redraw (may be needed if menu gets broken for some reason).\r\n\r\n\
+You can type in a two-digit number of the menu item (which is displayed on the left)\r\n\
+to quickly select the desired item without the need to press up/down keys many times.\r\n\
+Notice that you must enter two digits, e.g. for the item no. 3 you must enter '0' and then '3'.\r\n\r\n\
+Press Escape three times to exit menu version 2 and return to classic menu.\r\n");
+}
+
 const menu_item_descriptor_t menu_items[] = {
     {set_target_URL,"set the URL of the resource JSON data will be transmitted to"},
     {set_server_IP,"set the IP address"},
@@ -1021,10 +1063,12 @@ const menu_item_descriptor_t menu_items[] = {
     {set_telemetry_interval,"set telemetry transmission interval"},
     {set_GNSS_privacy,"set GNSS privacy mode (hide actual location data when transmitting on server)"},
     {set_startup_mode,"set firmware startup mode (setup or logger)"},
+    {set_menu_version,"set menu version to use after startup"},
     {test_sensors,"read on-board sensors and try to acquire GNSS data"},
     {perform_system_reset,"reboot MCU"},
     {perform_RF_module_reset,"reboot RF module"},
-    {test_function,"launch advanced menu"},
+    {show_menu_v2_help,"show usage and hotkeys for menu version 2"},
+    {test_function,"launch menu version 2"},
     {perform_initial_setup,"factory setup & test (do not use this unless you really know what you want)"},
     {NULL,"\0"}
 };

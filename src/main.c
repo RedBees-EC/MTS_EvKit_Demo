@@ -974,6 +974,11 @@ void main(void)
 
         while (1)
         {
+            if (eep_settings.bit_options & OPTION_START_WITH_MENU_V2)
+            {
+                service_menu_v2(menu_items);
+            }
+
             service_menu();
         }
     }

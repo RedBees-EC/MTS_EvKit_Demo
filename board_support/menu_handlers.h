@@ -14,8 +14,6 @@
 
 #include "board_support_api.h"
 
-#define ITEM_DESCRIPTION_LENGTH     150
-
 #ifndef NULL
 #define NULL                        ((void *)0)
 #endif
@@ -33,7 +31,7 @@ typedef struct {
     ///”казатель на функцию, ассоциированную с пунктом меню
     menu_handler_t menu_item_handler;
     ///—ловесное описание дл€ вывода в меню
-    const uint8_t item_string_description[ITEM_DESCRIPTION_LENGTH];
+    const uint8_t *item_string_description;
 } menu_item_descriptor_t;
 
 /**
