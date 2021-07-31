@@ -1,5 +1,5 @@
 /**
-    @mainpage Версия 2.4 beta 2, 22.01.2021
+    @mainpage Версия 2.6 beta, 31.07.2021
 
     @tableofcontents
 
@@ -59,6 +59,17 @@
 
     Прошивка реализует меню настроек, предназначенное для установки рабочих параметров, диагностики, а также доступа к некоторым другим возможностям.
 
+    @note Начиная с версии 2.6, доступны два вида меню: версия 1 (классическая) и версия 2, поддерживающая выбор пунктов меню клавишами "вверх"/"вниз"
+    на клавиатуре и использующая управляющие последовательности ANSI для вывода текста с использованием цвета. Тип меню по-умолчанию может быть установлен
+    в настройках.
+
+    @note Использование меню версии 2
+    @note Необходимый пункт меню можно выбрать клавишами "вверх"/"вниз" на клавиатуре. Недоступные функции отображаются приглушенным цветом.
+    @note Нажатие клавиши 'r' инициирует полную перерисовку меню. Это может быть полезно, если отображение меню по какой-то причине было нарушено.
+    @note Пункт меню можно быстро выбрать, введя его двузначный номер, отображаемый слева от его названия. Необходимо всегда вводить двузначный номер;
+    то есть, например, для пункта меню номер 3 следует сначала нажать клавишу '0' и затем '3'.
+    @note Троекратное нажатие клавиши Escape завершает меню версии 2 и приводит к выходу в классическое меню.
+
     @note Если прошивка функционирует в режиме периодической отсылки телеметрии (см. описание ниже), то для входа в сервисное меню следует нажать
     кнопку SB1 и, удерживая ее, перезагрузить контроллер кнопкой SB2, после чего удерживать SB1 до сообщения "(i) The device will enter service menu". Далее
     с помощью функции из сервисного меню (см. ниже) можно выбрать желаемый режим загрузки по умолчанию.
@@ -70,15 +81,10 @@
 
     @warning Система не анализирует семантику настроек; под корректными настройками подразумевается наличие структуры верного формата в EEPROM.
 
-    @image html service_menu_2_3_release.png Структура сервисного меню width=480
-
     @warning Внешний вид сервисного меню может незначительно отличаться в зависимости от версии прошивки. Актуальное описание функций приведено ниже.
 
-    @note Приведенный ниже список опций соответствует версии прошивки 2.4 beta 2 от 22.01.2021
-    @note В beta-версиях прошивки функционал прошивки может изменяться быстрее, чем обновляется документация. В случае расхождения этой документации и
-    встроенных сообщений-подсказок прошивки приоритет следует отдавать встроенным сообщениям.
-
-    ### Настройки передачи данных на сервер:
+    @note Приведенный ниже список опций соответствует версии прошивки 2.6 beta от 31.07.2021
+    @note В случае расхождения этой документации и встроенных сообщений-подсказок прошивки приоритет следует отдавать встроенным сообщениям.
 
     1  - установить URL, по которому будут передаваться данные телеметрии \n
 
@@ -89,8 +95,6 @@
     2  - установить IP-адрес сервера \n
     3  - установить номер UDP-порта, на котором сервер будет ожидать сообщения CoAP \n
     4  - установить APN для доступа с использованием NIDD; эта же опция позволяет включить либо выключить использование NIDD \n
-
-    ### Системные возможности:
 
     5  - инициировать однократную передачу пакета телеметрии с выбранными настройками (тест) \n
     6  - тест NIDD: ожидание входящих данных через канал NIDD в течение заданного интервала времени \n
@@ -136,7 +140,15 @@
 
     17 - программная перезагрузка радиомодуля \n
 
-    18 - заводской тест и настройка; для использования на производстве. \n
+    18 - отображение настроек, сохраненных в EEPROM \n
+
+    19 - установка версии меню, используемой по-умолчанию \n
+
+    20 - вывод справки по использованию меню версии 2 \n
+
+    21 - запуск меню версии 2 (доступно только из классического меню) \n
+
+    22 - заводской тест и настройка; для использования на производстве (недоступно из меню версии 2). \n
 
     @section p4 Особенности работы режимов энергосбережения
 
@@ -172,7 +184,7 @@
 
 #include "stm32l1xx.h"
 #include "board_support_api.h"
-#include "menu_handlers.h"
+#include "menu_engine.h"
 
 /**
     Отладочная опция: отключить переход контроллера в режим STOP между сеансами передачи телеметрии
@@ -913,109 +925,7 @@ uint8_t transmit_telemetry(uint8_t *target_IP,uint8_t *target_url,uint16_t targe
     return 1;
 }
 
-/**
-    @brief Функция, реализующая сервисное меню. См. описание сервисного меню на главной странице.
-*/
-void service_menu(void)
-{
-    uint8_t user_choice;
-    device_setup_data_t settings;
-    uint16_t k;
-    uint8_t user_input[80];
 
-    printf("\r\n*** Welcome to MTS NB-IoT Development Kit service menu ***\r\nFirmware version: %s\r\n\r\n",FIRMWARE_VERSION);
-
-    printf("Current settings found in EEPROM:\r\n\r\n");
-
-    recall_device_settings(&settings);
-
-    if (settings.target_server_IP[0]=='\0')
-    {
-        printf("Warning: target server IP not set.\r\n");
-    }
-    else
-    {
-        printf("Target IP:\t\t%s\r\n",settings.target_server_IP);
-    }
-
-    printf("Target port:\t\t%d\r\n",settings.target_server_port);
-
-    if ((!is_alphanumeric(settings.target_URL[1])) || (settings.target_URL[0]=='\0'))
-    {
-        printf("Warning: target URL not set.\r\n");
-    }
-    else
-    {
-        printf("Target URL:\t\t%s\r\n",settings.target_URL);
-    }
-
-    if ((!is_alphanumeric(settings.NIDD_APN_name[1])) || (settings.NIDD_APN_name[0]=='\0'))
-    {
-        printf("Warning: APN name not set.\r\n");
-    }
-    else
-    {
-        printf("NIDD APN:\t\t%s\r\n",settings.NIDD_APN_name);
-    }
-
-    printf("Use NIDD for telemetry:\t%d\r\n",settings.use_NIDD);
-
-    printf("Board mode on startup:\t");
-
-    if (settings.logger_mode_on_startup==LOGGER_MODE_VALUE)
-    {
-        printf("logger\r\n");
-    }
-    else
-    {
-        printf("service menu\r\n");
-    }
-
-    printf("Telemetry interval\r\n(in logger mode):\t%d ms\r\n",settings.telemetry_interval_ms);
-    printf("GNSS privacy mode:\t%d\r\n",settings.gnss_privacy_mode);
-
-    printf("\r\nType in a function number from a list below and press enter.\r\n\r\n");
-
-    k=0;
-    while ((menu_items[k].menu_item_handler!=NULL) && (menu_items[k].item_string_description[0]!='\0'))
-    {
-        if (k==0)
-        {
-            printf("Target server setup:\r\n");
-        }
-        if (k==4)
-        {
-            printf("System functions:\r\n");
-        }
-        printf("\t%d\t- %s\r\n",k+1,menu_items[k].item_string_description);
-        k++;
-    }
-
-    printf("> ");
-    scanf("%s",user_input);
-    apply_backspace(user_input,80);
-    user_choice = atoi(user_input);
-
-    user_choice--; //Array numbering is zero-based, but menu items are numbered starting from one not to confuse the user
-
-    printf("\r\n--------------------------------------------------------------------------------\r\n");
-
-    if (user_choice>=k)
-    {
-        printf("Unknown function - %d",user_input+1);
-    }
-    else
-    {
-        menu_items[user_choice].menu_item_handler(&settings);
-    }
-
-    printf("\r\n--------------------------------------------------------------------------------\r\n");
-
-    printf("Press Enter to return to service menu.\r\n");
-    getchar();
-    getchar();
-    printf("\r\n");
-}
 
 /**
     @brief Точка входа приложения.
@@ -1072,6 +982,11 @@ void main(void)
             {
                 printf("Could not disable the use of PSM;\r\ncheck that the module has started up and not in PSM mode already, and try to do this manually.\r\n");
             }
+        }
+
+        if (eep_settings.bit_options & OPTION_START_WITH_MENU_V2)
+        {
+            service_menu_v2(menu_items);
         }
 
         while (1)

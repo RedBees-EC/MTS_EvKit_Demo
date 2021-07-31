@@ -6,4 +6,5 @@ obj\release\src\main.o: src\main.c inc/stm32l1xx.h cmsis/core_cm3.h \
  board_support/lis3dh_driver.h board_support/at_cmd_support.h \
  board_support/awu_api.h coap/coap_essentials.h \
  board_support/gnss_support.h board_support/ds1721_driver.h \
- board_support/menu_handlers.h board_support/board_support_api.h
+ board_support/menu_engine.h board_support/menu_handlers.h \
+ board_support/board_support_api.h
