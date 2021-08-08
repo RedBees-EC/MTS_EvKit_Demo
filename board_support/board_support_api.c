@@ -221,7 +221,20 @@ void init_board(void)
     {
         safety_counter++;
     }
-
+	
+	/*
+        By default voltage regulator is in range 2 (1.5 V core voltage), and in this mode
+        1 wait state is needed for 16 MHz
+    */
+    FLASH->ACR |= FLASH_ACR_ACC64;
+    while (!(FLASH->ACR & FLASH_ACR_ACC64))
+    {
+    }
+    FLASH->ACR |= FLASH_ACR_PRFTEN | FLASH_ACR_LATENCY;
+    while (!(FLASH->ACR & FLASH_ACR_LATENCY))
+    {
+    }
+	
     //Switch clock to HSI; after this write clock will be switched automatically after some time.
     RCC->CFGR |= RCC_CFGR_SW_HSI;
 
