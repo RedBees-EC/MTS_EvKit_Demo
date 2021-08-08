@@ -29,10 +29,10 @@
 #include "stdlib.h"
 #include "ds1721_driver.h"
 
-#define FIRMWARE_VERSION            "2.6 beta, 31.07.2021"
+#define FIRMWARE_VERSION            "2.7 alpha, 08.08.2021"
 
-#define MTS_COAP_SERVER_IP          "195.34.49.22"
-#define MTS_COAP_SERVER_PORT        6683
+#define MTS_COAP_SERVER_IP          "213.87.45.120"
+#define MTS_COAP_SERVER_PORT        5683
 
 ///Значение тактовой частоты, на которой работает контроллер
 #define DEFAULT_CLOCK_FREQ      16000000UL

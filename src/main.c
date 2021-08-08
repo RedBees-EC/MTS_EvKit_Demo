@@ -785,7 +785,7 @@ uint8_t transmit_telemetry(uint8_t *target_IP,uint8_t *target_url,uint16_t targe
     RSSI = AT_GetRSSI(CYCLES_PER_1SEC);
 
     snprintf(json_string,MAX_JSON_LENGTH,
-    "{'interface':'telemetry', 'ICCID':'%s', 'Tamb_degC':%d, 'aX':%d, 'aY':%d, 'aZ':%d, 'RSSI_dBm':%d, 'latitude':%.6f, 'longitude':%.6f, 'GNSS_data_valid':%d}",
+    "{\"interface\":\"telemetry\", \"ICCID\":\"%s\", \"Tamb_degC\":%d, \"aX\":%d, \"aY\":%d, \"aZ\":%d, \"RSSI_dBm\":%d, \"latitude\":%.6f, \"longitude\":%.6f, \"GNSS_data_valid\":%d}",
              ICCID_string,
              Tamb,
              accel_X,
