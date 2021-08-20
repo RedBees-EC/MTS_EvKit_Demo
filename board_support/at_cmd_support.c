@@ -623,6 +623,176 @@ at_udp_error_t AT_ReadUDPData(uint8_t socket_id,uint16_t read_length,uint8_t *so
     return AT_NO_ERROR;
 }
 
+uint8_t AT_CreateTCPSocket(uint32_t max_wait_time)
+{
+    uint8_t resp;
+    uint32_t socket_id;
+    uint8_t n_read;
+    uint8_t *ptr;
+
+    AT_SendCommand("AT+USOCR=6\r\n");
+
+    resp = __wait_AT_response(max_wait_time);
+
+    if ((resp == NO_RESP_RECEIVED) || (resp == RECEIVED_ERROR))
+    {
+        __AT_FSM_rearm();
+
+        return 255;
+    }
+
+    lock_buffer = 1;
+    response_buffer[buffer_index] = 0;
+
+    ptr = strstr((char *)response_buffer,"+USOCR:");
+    n_read = sscanf(ptr,"+USOCR: %d",&socket_id);
+
+    __AT_FSM_rearm();
+
+    if (n_read != 1)
+    {
+        return 255;
+    }
+
+    return socket_id;
+}
+
+uint8_t AT_ConnectTCPSocket(uint8_t socket_id,uint8_t *target_IP,uint16_t target_port,uint32_t max_wait_time)
+{
+    uint8_t at_command_buffer[45];
+    uint8_t resp;
+
+    snprintf(at_command_buffer,45,"AT+USOCO=%d,\"%s\",%d\r\n",socket_id,target_IP,target_port);
+
+    AT_SendCommand(at_command_buffer);
+
+    resp = __wait_AT_response(max_wait_time);
+    __AT_FSM_rearm();
+
+    if ((resp == NO_RESP_RECEIVED) || (resp == RECEIVED_ERROR))
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+uint8_t AT_CheckTCPReceived(uint8_t *socket_id,uint16_t *data_length)
+{
+    uint32_t at_socket_id;
+    uint32_t at_data_length;
+    uint8_t n_read;
+    uint8_t *ptr;
+
+    (*socket_id) = 255;
+    (*data_length) = 0;
+
+    if (URC_search_list[TCP_URC_LIST_INDEX].URC_detected == 0)
+    {
+        return 0;
+    }
+
+    lock_buffer = 1;
+    response_buffer[buffer_index] = 0;
+
+    ptr = strstr((char *)response_buffer,"+UUSORD:");
+    n_read = sscanf(ptr,"+UUSORD: %d,%d",&at_socket_id,&at_data_length);
+
+    __AT_FSM_rearm();
+
+    if (n_read != 2)
+    {
+        return 0;
+    }
+
+    (*socket_id) = at_socket_id;
+    (*data_length) = at_data_length;
+
+    return at_data_length;
+}
+
+uint8_t AT_ReadTCPData(uint8_t socket_id,uint16_t length,uint8_t *out_buffer,uint32_t max_wait_time)
+{
+    uint8_t at_command_buffer[45];
+    uint8_t resp;
+    uint8_t data_string[128];
+    uint8_t n_read;
+    uint16_t k;
+    uint8_t *ptr;
+
+    snprintf((char *)at_command_buffer,45,"AT+USORD=%d,%d\r\n",socket_id,length);
+
+    AT_SendCommand(at_command_buffer);
+
+    resp = __wait_AT_response(max_wait_time);
+
+    if ((resp == NO_RESP_RECEIVED) && (resp == RECEIVED_ERROR))
+    {
+        __AT_FSM_rearm();
+
+        return 0;
+    }
+
+    lock_buffer = 1;
+    response_buffer[buffer_index] = 0;
+
+    ptr = strstr((char *)response_buffer,"+USORD:");
+    n_read = sscanf(ptr,"+USORD: %*d,%*d,\"%[^\"]",data_string);
+    __AT_FSM_rearm();
+
+    for (k=0; k<length; k++)
+    {
+        out_buffer[k] = data_string[k];
+    }
+
+    out_buffer[k] = 0;
+
+    return 1;
+}
+
+uint8_t AT_SendTCPData(uint8_t socket_id,uint16_t data_length,uint8_t *data_buffer,uint32_t max_wait_time)
+{
+    uint8_t at_command_buffer[256];
+    uint8_t resp;
+
+    snprintf(at_command_buffer,45,"AT+USOWR=%d,%d,\"%s\"\r\n",socket_id,data_length,data_buffer);
+
+    AT_SendCommand(at_command_buffer);
+    resp = __wait_AT_response(max_wait_time);
+    __AT_FSM_rearm();
+
+    if ((resp == NO_RESP_RECEIVED) || (resp == RECEIVED_ERROR))
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+uint8_t AT_CloseTCPSocket(uint8_t socket_id,uint32_t max_wait_time)
+{
+    uint8_t at_command_buffer[45];
+    uint8_t resp;
+
+    snprintf(at_command_buffer,45,"AT+USOCL=%d\r\n",socket_id);
+
+    AT_SendCommand(at_command_buffer);
+    resp = __wait_AT_response(max_wait_time);
+
+    if ((resp == NO_RESP_RECEIVED) || (resp == RECEIVED_ERROR))
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
 int16_t AT_GetRSSI(uint32_t timeout)
 {
     uint8_t *result_pos;
