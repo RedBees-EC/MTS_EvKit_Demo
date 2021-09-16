@@ -29,7 +29,7 @@
 #include "stdlib.h"
 #include "ds1721_driver.h"
 
-#define FIRMWARE_VERSION            "2.7 alpha, 08.08.2021"
+#define FIRMWARE_VERSION            "2.7 release, 16.09.2021"
 
 #define MTS_COAP_SERVER_IP          "213.87.45.120"
 #define MTS_COAP_SERVER_PORT        5683

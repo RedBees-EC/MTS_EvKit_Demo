@@ -679,6 +679,8 @@ uint8_t AT_ConnectTCPSocket(uint8_t socket_id,uint8_t *target_IP,uint16_t target
     }
 }
 
+#if 0
+
 uint8_t AT_CheckTCPReceived(uint8_t *socket_id,uint16_t *data_length)
 {
     uint32_t at_socket_id;
@@ -792,6 +794,8 @@ uint8_t AT_CloseTCPSocket(uint8_t socket_id,uint32_t max_wait_time)
         return 1;
     }
 }
+
+#endif
 
 int16_t AT_GetRSSI(uint32_t timeout)
 {

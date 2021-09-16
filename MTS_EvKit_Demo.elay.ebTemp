@@ -3,7 +3,7 @@
 	<ActiveTarget name="Release" />
 	<File name="board_support\at_cmd_support.c" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="17372" topLine="543" />
+			<Cursor1 position="17372" topLine="660" />
 		</Cursor>
 	</File>
 	<File name="board_support\at_cmd_support.h" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
