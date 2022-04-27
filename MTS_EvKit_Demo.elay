@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <EmBitz_layout_file>
 	<ActiveTarget name="Release" />
-	<File name="board_support\at_cmd_support.c" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="board_support\at_cmd_support.c" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="17372" topLine="543" />
+			<Cursor1 position="23367" topLine="15" />
 		</Cursor>
 	</File>
 	<File name="board_support\at_cmd_support.h" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -31,9 +31,9 @@
 			<Cursor1 position="10499" topLine="340" />
 		</Cursor>
 	</File>
-	<File name="board_support\board_support_api.h" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="board_support\board_support_api.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="770" topLine="18" />
+			<Cursor1 position="866" topLine="15" />
 		</Cursor>
 	</File>
 	<File name="board_support\ds1721_driver.c" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -76,22 +76,22 @@
 			<Cursor1 position="2477" topLine="64" />
 		</Cursor>
 	</File>
-	<File name="board_support\menu_engine.c" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="board_support\menu_engine.c" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="841" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="board_support\menu_engine.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="board_support\menu_engine.h" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="570" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="board_support\menu_handlers.c" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="board_support\menu_handlers.c" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="33263" topLine="1041" />
+			<Cursor1 position="11678" topLine="394" />
 		</Cursor>
 	</File>
-	<File name="board_support\menu_handlers.h" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="board_support\menu_handlers.h" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="358" topLine="2" />
 		</Cursor>
@@ -146,9 +146,9 @@
 			<Cursor1 position="144753" topLine="2037" />
 		</Cursor>
 	</File>
-	<File name="src\main.c" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src\main.c" open="1" top="1" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="19119" topLine="162" />
+			<Cursor1 position="40605" topLine="768" />
 		</Cursor>
 	</File>
 	<File name="src\startup_stm32l1xx_hd.S" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">

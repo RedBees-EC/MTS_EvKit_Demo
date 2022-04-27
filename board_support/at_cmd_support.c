@@ -939,34 +939,52 @@ uint8_t AT_ReadIMEI(uint8_t *IMEI,uint32_t timeout)
 
 uint8_t AT_SendStringUsingNIDD(uint8_t *str,uint32_t timeout)
 {
-    uint8_t cmd_buffer[512];
+    static uint8_t cmd_buffer[1024];
     uint16_t string_length;
     uint8_t error_state;
 
+    printf("DEBUG1: NIDD start.\r\n");
+
     //Determining the length of a string safely
     string_length=0;
-    while ((str[string_length]!=0) && (string_length<450))
+    while ((str[string_length]!=0) && (string_length<900))
     {
         string_length++;
     }
 
-    if (string_length==450)
+    printf("DEBUG2: L1 = %d\r\n",string_length);
+
+    if (string_length==900)
     {
         //Possibly unterminated string?
         return 0;
     }
 
-    snprintf(cmd_buffer,512,"AT+CSODCP=1,%d,\"%s\"\r\n",string_length,str);
+    printf("DEBUG3: Command start.\r\n");
+
+    snprintf(cmd_buffer,1024,"AT+CSODCP=1,%d,\"%s\"\r\n",string_length,str);
+
+    printf("DEBUG4: S1 = %s\r\n",cmd_buffer);
+
     AT_SendCommand(cmd_buffer);
 
-    AT_ReadReponseBuffer(NULL,0,NULL,NULL,&error_state,timeout);
+    printf("DEBUG5: Command end.\r\n");
+
+    AT_ReadReponseBuffer(cmd_buffer,1024,NULL,NULL,&error_state,timeout);
+
+    cmd_buffer[1023] = 0;
+    printf("DEBUG6: S2 = %s\r\n",cmd_buffer);
 
     if (error_state!=0)
     {
+        printf("DEBUG7: EXIT1\r\n");
+
         return 0;
     }
     else
     {
+        printf("DEBUG8: EXIT2\r\n");
+
         return 1;
     }
 }

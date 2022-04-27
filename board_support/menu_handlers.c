@@ -361,50 +361,53 @@ void print_network_info(device_setup_data_t *settings)
         sscanf(resp_buffer,"%*s\r\r\n+CSQ: %d",&RSSI);
         printf("RSSI\t= %d dBm (valid range is -111 to -51 dBm)\r\n",(RSSI*2) - 113);
 
-        marker_pos = 0.42*((RSSI*2.0) - 113.0) + 50;
-
-        /*      __________________________________________________     */
-        printf("\r\n");
-        printf("  -111                     -51                    0\r\n");
-        //printf("   |                         |                    |\r\n");
-
-        for (k=0; k<50; k++)
+        if (settings->bit_options & OPTION_START_WITH_MENU_V2)
         {
-            if (k==0)
-            {
-                printf("\x1B[47m");
-            }
+            marker_pos = 0.42*((RSSI*2.0) - 113.0) + 50;
 
-            if (k==3)
-            {
-                printf("\x1B[41m");
-            }
+            /*      __________________________________________________     */
+            printf("\r\n");
+            printf("  -111                     -51                    0\r\n");
+            //printf("   |                         |                    |\r\n");
 
-            if (k==8)
+            for (k=0; k<50; k++)
             {
-                printf("\x1B[43m");
-            }
+                if (k==0)
+                {
+                    printf("\x1B[47m");
+                }
 
-            if (k==20)
-            {
-                printf("\x1B[42m");
-            }
+                if (k==3)
+                {
+                    printf("\x1B[41m");
+                }
 
-            if (k==28)
-            {
-                printf("\x1B[47m");
-            }
+                if (k==8)
+                {
+                    printf("\x1B[43m");
+                }
 
-            if (k == marker_pos)
-            {
-                printf("\x1B[30m*\x1B[37m");
+                if (k==20)
+                {
+                    printf("\x1B[42m");
+                }
+
+                if (k==28)
+                {
+                    printf("\x1B[47m");
+                }
+
+                if (k == marker_pos)
+                {
+                    printf("\x1B[30m*\x1B[37m");
+                }
+                else
+                {
+                    printf(" ");
+                }
             }
-            else
-            {
-                printf(" ");
-            }
+            printf("\x1B[0m dBm\r\n\r\n");
         }
-        printf("\x1B[0m dBm\r\n\r\n");
     }
     else
     {
